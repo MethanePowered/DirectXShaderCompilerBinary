@@ -9,9 +9,11 @@ include(ExternalProject)
 
 get_platform_arch_dir(PLATFORM_ARCH_DIR CPP_EXT)
 
-add_library(${TARGET} STATIC
-    src/d3dcomp.cpp
-)
+if(WIN32)
+    add_library(${TARGET} STATIC src/d3dcomp.cpp)
+else()
+    add_library(${TARGET} STATIC src/dummy.cpp)
+endif()
 
 set(BINARIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/binaries/${PLATFORM_ARCH_DIR})
 set(LIB_DIR ${BINARIES_DIR}/lib)
