@@ -1,13 +1,11 @@
 if (POLICY CMP0114)
-    cmake_policy(SET CMP0114 NEW) # 'ExternalProject' step targets fully adopt their steps, support new CMake build system
+    # 'ExternalProject' step targets fully adopt their steps, support new CMake build system
+    cmake_policy(SET CMP0114 NEW)
 endif()
 
 set(TARGET DirectXCompiler)
 
-include(MethaneModules)
 include(ExternalProject)
-
-get_platform_arch_dir(PLATFORM_ARCH_DIR CPP_EXT)
 
 if(WIN32)
     add_library(${TARGET} STATIC src/d3dcomp.cpp)
@@ -15,30 +13,33 @@ else()
     add_library(${TARGET} STATIC src/dummy.cpp)
 endif()
 
-set(BINARIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/binaries/${PLATFORM_ARCH_DIR})
-set(LIB_DIR ${BINARIES_DIR}/lib)
-set(BIN_DIR ${BINARIES_DIR}/bin)
-
 if(WIN32)
 
-    get_target_arch(WIN_ARCH)
-    if(${WIN_ARCH} STREQUAL "x64")
-       set(BINARIES_MD5 b021edca36b29b2b4a1b770ceac840a6)
-    elseif(${WIN_ARCH} STREQUAL "x86")
-       set(BINARIES_MD5 126d272b93bf866d2752e0dab9cef5a8)
+    if(${CMAKE_SIZEOF_VOID_P} STREQUAL "4")
+        set(WIN_ARCH "x86")
+        set(BINARIES_MD5 126d272b93bf866d2752e0dab9cef5a8)
+    elseif(${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+        set(WIN_ARCH "x64")
+        set(BINARIES_MD5 b021edca36b29b2b4a1b770ceac840a6)
+    else()
+        message(FATAL_ERROR "Unknown architecture")
     endif()
 
-    set(LIBRARIES
-        "${LIB_DIR}/dxcompiler.lib")
-    set(PREREQUISITE_BINARIES_LIST 
-        "${BIN_DIR}/dxcompiler.dll")
+    set(BINARIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/binaries/Windows-${WIN_ARCH}")
+
+    list(APPEND LIBRARIES
+        "${BINARIES_DIR}/lib/dxcompiler.lib")
+    list(APPEND PREREQUISITE_BINARIES_LIST
+        "${BINARIES_DIR}/bin/dxcompiler.dll")
 
 elseif(APPLE)
 
+    set(BINARIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/binaries/MacOS")
     set(BINARIES_MD5 bac6f20868b8026db11545bb7af5a514)
 
 else() # Linux
 
+    set(BINARIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/binaries/Linux")
     set(BINARIES_MD5 267c9e7efece17b931826fb5cc287e3a)
 
 endif()
@@ -50,6 +51,7 @@ ExternalProject_Add(${TARGET}Unpack
     BUILD_BYPRODUCTS ${LIBRARIES}
     BUILD_IN_SOURCE TRUE
     EXCLUDE_FROM_ALL TRUE
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     STEP_TARGETS build
