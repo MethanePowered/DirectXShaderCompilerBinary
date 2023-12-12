@@ -26,6 +26,7 @@ if(WIN32)
     endif()
 
     set(BINARIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/binaries/Windows-${WIN_ARCH}")
+    set(CONFIGURE_CMD "")
 
     list(APPEND LIBRARIES
         "${BINARIES_DIR}/lib/dxcompiler.lib")
@@ -42,6 +43,7 @@ else() # Linux
 
     set(BINARIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/binaries/Linux")
     set(BINARIES_MD5 267c9e7efece17b931826fb5cc287e3a)
+    set(CONFIGURE_CMD "")
 
 endif()
 
