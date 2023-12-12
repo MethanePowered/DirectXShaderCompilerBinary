@@ -36,7 +36,7 @@ elseif(APPLE)
 
     set(BINARIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/binaries/MacOS")
     set(BINARIES_MD5 bac6f20868b8026db11545bb7af5a514)
-    set(CONFIGURE_CMD "xattr -d com.apple.quarantine ${BINARIES_DIR}/bin/dxc ${BINARIES_DIR}/bin/libdxcompiler.dylib || true")
+    set(CONFIGURE_CMD xattr -d com.apple.quarantine "${BINARIES_DIR}/bin/dxc" "${BINARIES_DIR}/bin/libdxcompiler.dylib" || true)
 
 else() # Linux
 
@@ -53,7 +53,7 @@ ExternalProject_Add(${TARGET}Unpack
     BUILD_IN_SOURCE TRUE
     EXCLUDE_FROM_ALL TRUE
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    CONFIGURE_COMMAND "${CONFIGURE_CMD}"
+    CONFIGURE_COMMAND ${CONFIGURE_CMD}
     BUILD_COMMAND ""
     STEP_TARGETS build
 )
