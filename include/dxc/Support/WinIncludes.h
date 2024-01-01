@@ -47,8 +47,6 @@
 #include <intsafe.h>
 #include <ObjIdl.h>
 
-#include "dxc/config.h"
-
 // Support older atlbase.h if needed
 #ifndef _ATL_DECLSPEC_ALLOCATOR
 #define _ATL_DECLSPEC_ALLOCATOR
