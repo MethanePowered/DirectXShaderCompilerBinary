@@ -128,7 +128,7 @@ HRESULT CompileFromBlob(IDxcBlobEncoding *pSource, LPCWSTR pSourceName,
   }
 }
 
-HRESULT WINAPI D3DCompile(LPCVOID pSrcData, SIZE_T SrcDataSize,
+HRESULT WINAPI BridgeD3DCompile(LPCVOID pSrcData, SIZE_T SrcDataSize,
                                 LPCSTR pSourceName,
                                 const D3D_SHADER_MACRO *pDefines,
                                 ID3DInclude *pInclude, LPCSTR pEntrypoint,
@@ -164,21 +164,21 @@ HRESULT WINAPI D3DCompile(LPCVOID pSrcData, SIZE_T SrcDataSize,
   }
 }
 
-HRESULT WINAPI D3DCompile2(
+HRESULT WINAPI BridgeD3DCompile2(
     LPCVOID pSrcData, SIZE_T SrcDataSize, LPCSTR pSourceName,
     const D3D_SHADER_MACRO *pDefines, ID3DInclude *pInclude, LPCSTR pEntrypoint,
     LPCSTR pTarget, UINT Flags1, UINT Flags2, UINT SecondaryDataFlags,
     LPCVOID pSecondaryData, SIZE_T SecondaryDataSize, ID3DBlob **ppCode,
     ID3DBlob **ppErrorMsgs) {
   if (SecondaryDataFlags == 0 || pSecondaryData == nullptr) {
-    return D3DCompile(pSrcData, SrcDataSize, pSourceName, pDefines,
+    return BridgeD3DCompile(pSrcData, SrcDataSize, pSourceName, pDefines,
                             pInclude, pEntrypoint, pTarget, Flags1, Flags2,
                             ppCode, ppErrorMsgs);
   }
   return E_NOTIMPL;
 }
 
-HRESULT WINAPI D3DCompileFromFile(
+HRESULT WINAPI BridgeD3DCompileFromFile(
     LPCWSTR pFileName, const D3D_SHADER_MACRO *pDefines, ID3DInclude *pInclude,
     LPCSTR pEntrypoint, LPCSTR pTarget, UINT Flags1, UINT Flags2,
     ID3DBlob **ppCode, ID3DBlob **ppErrorMsgs) {
@@ -210,7 +210,7 @@ HRESULT WINAPI D3DCompileFromFile(
                          pTarget, Flags1, Flags2, ppCode, ppErrorMsgs);
 }
 
-HRESULT WINAPI D3DDisassemble(
+HRESULT WINAPI BridgeD3DDisassemble(
   _In_reads_bytes_(SrcDataSize) LPCVOID pSrcData,
   _In_ SIZE_T SrcDataSize,
   _In_ UINT Flags,
@@ -236,7 +236,7 @@ HRESULT WINAPI D3DDisassemble(
   return S_OK;
 }
 
-HRESULT WINAPI D3DReflect(
+HRESULT WINAPI BridgeD3DReflect(
   _In_reads_bytes_(SrcDataSize) LPCVOID pSrcData,
   _In_ SIZE_T SrcDataSize,
   _In_ REFIID pInterface,
@@ -329,7 +329,7 @@ HRESULT PreprocessFromBlob(IDxcBlobEncoding *pSource, LPCWSTR pSourceName,
   }
 }
 
-HRESULT WINAPI D3DPreprocess(_In_reads_bytes_(SrcDataSize) LPCVOID pSrcData,
+HRESULT WINAPI BridgeD3DPreprocess(_In_reads_bytes_(SrcDataSize) LPCVOID pSrcData,
                              _In_ SIZE_T SrcDataSize,
                              _In_opt_ LPCSTR pSourceName,
                              _In_opt_ const D3D_SHADER_MACRO *pDefines,

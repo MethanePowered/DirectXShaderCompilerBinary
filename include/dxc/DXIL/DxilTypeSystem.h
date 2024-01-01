@@ -15,6 +15,7 @@
 #include "dxc/DXIL/DxilConstants.h"
 #include "dxc/DXIL/DxilCompType.h"
 #include "dxc/DXIL/DxilInterpolationMode.h"
+#include "dxc/DXIL/DxilResourceProperties.h"
 
 #include <memory>
 #include <string>
@@ -27,7 +28,6 @@ class Function;
 class MDNode;
 class Type;
 class StructType;
-class StringRef;
 }
 
 
@@ -55,9 +55,12 @@ public:
   const DxilMatrixAnnotation &GetMatrixAnnotation() const;
   void SetMatrixAnnotation(const DxilMatrixAnnotation &MA);
 
-  bool HasResourceAttribute() const;
-  llvm::MDNode *GetResourceAttribute() const;
-  void SetResourceAttribute(llvm::MDNode *MD);
+  // Currently, ResourceProperties is only used to capture resource type
+  // information during CodeGen for the annotate handle generated during
+  // AddOpcodeParamForIntrinsic.
+  bool HasResourceProperties() const;
+  const DxilResourceProperties &GetResourceProperties() const;
+  void SetResourceProperties(const DxilResourceProperties &RP);
 
   bool HasCBufferOffset() const;
   unsigned GetCBufferOffset() const;
@@ -83,19 +86,29 @@ public:
   bool IsCBVarUsed() const;
   void SetCBVarUsed(bool used);
 
+  bool HasBitFields() const;
+  const std::vector<DxilFieldAnnotation> &GetBitFields() const;
+  void SetBitFields(const std::vector<DxilFieldAnnotation> &Fields);
+
+  bool HasBitFieldWidth() const;
+  unsigned GetBitFieldWidth() const;
+  void SetBitFieldWidth(const unsigned BitWidth);
+
 private:
   bool m_bPrecise;
   CompType m_CompType;
   DxilMatrixAnnotation m_Matrix;
-  llvm::MDNode *m_ResourceAttribute;
+  DxilResourceProperties m_ResourceProps;
   unsigned m_CBufferOffset;
   std::string m_Semantic;
   InterpolationMode m_InterpMode;
   std::string m_FieldName;
   bool m_bCBufferVarUsed; // true if this field represents a top level variable in CB structure, and it is used.
+  std::vector<DxilFieldAnnotation> m_BitFields;
+  unsigned m_BitFieldWidth; // For bit field. 0 means not bitfield.
 };
 
-class DxilTemplateArgAnnotation : DxilFieldAnnotation {
+class DxilTemplateArgAnnotation {
 public:
   DxilTemplateArgAnnotation();
 
@@ -126,6 +139,10 @@ public:
   void SetCBufferSize(unsigned size);
   void MarkEmptyStruct();
   bool IsEmptyStruct();
+  // Since resources don't take real space, IsEmptyBesidesResources
+  // determines if the structure is empty or contains only resources.
+  bool IsEmptyBesidesResources();
+  bool ContainsResources() const;
 
   // For template args, GetNumTemplateArgs() will return 0 if not a template
   unsigned GetNumTemplateArgs() const;
@@ -134,10 +151,15 @@ public:
   const DxilTemplateArgAnnotation &GetTemplateArgAnnotation(unsigned argIdx) const;
 
 private:
-  const llvm::StructType *m_pStructType;
+  const llvm::StructType *m_pStructType = nullptr;
   std::vector<DxilFieldAnnotation> m_FieldAnnotations;
-  unsigned m_CBufferSize;  // The size of struct if inside constant buffer.
+  unsigned m_CBufferSize = 0;  // The size of struct if inside constant buffer.
   std::vector<DxilTemplateArgAnnotation> m_TemplateAnnotations;
+
+  // m_ResourcesContained property not stored to metadata
+  void SetContainsResources();
+  // HasResources::Only will be set on MarkEmptyStruct() when HasResources::True
+  enum class HasResources { True, False, Only } m_ResourcesContained = HasResources::False;
 };
 
 
@@ -223,10 +245,17 @@ public:
   const llvm::Function *GetFunction() const;
   DxilParameterAnnotation &GetRetTypeAnnotation();
   const DxilParameterAnnotation &GetRetTypeAnnotation() const;
+
+  bool ContainsResourceArgs() { return m_bContainsResourceArgs; }
+
 private:
   const llvm::Function *m_pFunction;
   std::vector<DxilParameterAnnotation> m_parameterAnnotations;
   DxilParameterAnnotation m_retTypeAnnotation;
+
+  // m_bContainsResourceArgs property not stored to metadata
+  void SetContainsResourceArgs() { m_bContainsResourceArgs = true; }
+  bool m_bContainsResourceArgs = false;
 };
 
 /// Use this class to represent structure type annotations in HL and DXIL.
@@ -239,9 +268,11 @@ public:
   DxilTypeSystem(llvm::Module *pModule);
 
   DxilStructAnnotation *AddStructAnnotation(const llvm::StructType *pStructType, unsigned numTemplateArgs = 0);
+  void FinishStructAnnotation(DxilStructAnnotation &SA);
   DxilStructAnnotation *GetStructAnnotation(const llvm::StructType *pStructType);
   const DxilStructAnnotation *GetStructAnnotation(const llvm::StructType *pStructType) const;
   void EraseStructAnnotation(const llvm::StructType *pStructType);
+  void EraseUnusedStructAnnotations();
 
   StructAnnotationMap &GetStructAnnotationMap();
   const StructAnnotationMap &GetStructAnnotationMap() const;
@@ -255,6 +286,7 @@ public:
   const PayloadAnnotationMap &GetPayloadAnnotationMap() const;
 
   DxilFunctionAnnotation *AddFunctionAnnotation(const llvm::Function *pFunction);
+  void FinishFunctionAnnotation(DxilFunctionAnnotation &FA);
   DxilFunctionAnnotation *GetFunctionAnnotation(const llvm::Function *pFunction);
   const DxilFunctionAnnotation *GetFunctionAnnotation(const llvm::Function *pFunction) const;
   void EraseFunctionAnnotation(const llvm::Function *pFunction);
@@ -275,6 +307,9 @@ public:
   bool UseMinPrecision();
   void SetMinPrecision(bool bMinPrecision);
 
+  // Determines whether type is a resource or contains a resource
+  bool IsResourceContained(llvm::Type *Ty);
+
 private:
   llvm::Module *m_pModule;
   StructAnnotationMap m_StructAnnotations;
@@ -290,15 +325,19 @@ DXIL::SigPointKind SigPointFromInputQual(DxilParamInputQual Q, DXIL::ShaderKind 
 
 void RemapObsoleteSemantic(DxilParameterAnnotation &paramInfo, DXIL::SigPointKind sigPoint, llvm::LLVMContext &Context);
 
-class DxilStructTypeIterator
-    : public std::iterator<std::input_iterator_tag,
-                           std::pair<llvm::Type *, DxilFieldAnnotation *>> {
+class DxilStructTypeIterator {
 private:
   llvm::StructType *STy;
   DxilStructAnnotation *SAnnotation;
   unsigned index;
 
 public:
+  using iterator_category = std::input_iterator_tag;
+  using value_type = std::pair<llvm::Type *, DxilFieldAnnotation *>;
+  using difference_type = std::ptrdiff_t;
+  using pointer = value_type *;
+  using reference = value_type &;
+
   DxilStructTypeIterator(llvm::StructType *sTy,
                          DxilStructAnnotation *sAnnotation, unsigned idx = 0);
   // prefix

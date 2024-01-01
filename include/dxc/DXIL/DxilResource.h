@@ -29,8 +29,19 @@ public:
   static unsigned GetNumDimensionsForCalcLOD(Kind ResourceKind);
   /// Total number of offsets (in [-8,7]) necessary to access resource.
   static unsigned GetNumOffsets(Kind ResourceKind);
-  /// Whether the resource kind is texture.
+  /// Whether the resource kind is a texture. This does not include
+  /// FeedbackTextures.
   static bool IsAnyTexture(Kind ResourceKind);
+  /// Whether the resource kind is an array of textures. This does not include
+  /// FeedbackTextures.
+  static bool IsAnyArrayTexture(Kind ResourceKind);
+  /// Whether the resource kind is a TextureCube or TextureCubeArray.
+  static bool IsAnyTextureCube(Kind ResourceKind);
+  /// Whether the resource kind is a FeedbackTexture.
+  static bool IsFeedbackTexture(Kind ResourceKind);
+  /// Whether the resource kind is a Texture or FeedbackTexture kind with array
+  /// dimension.
+  static bool IsArrayKind(Kind ResourceKind);
 
   DxilResource();
 
@@ -44,6 +55,9 @@ public:
 
   unsigned GetElementStride() const;
   void SetElementStride(unsigned ElemStride);
+
+  unsigned GetBaseAlignLog2() const;
+  void SetBaseAlignLog2(unsigned baseAlignLog2);
 
   DXIL::SamplerFeedbackType GetSamplerFeedbackType() const;
   void SetSamplerFeedbackType(DXIL::SamplerFeedbackType Value);
@@ -65,6 +79,9 @@ public:
   bool IsRawBuffer() const;
   bool IsTBuffer() const;
   bool IsFeedbackTexture() const;
+  bool IsAnyArrayTexture() const;
+  bool IsAnyTextureCube() const;
+  bool IsArrayKind() const;
 
   bool HasAtomic64Use() const;
   void SetHasAtomic64Use(bool b);
@@ -76,6 +93,7 @@ public:
 private:
   unsigned m_SampleCount;
   unsigned m_ElementStride; // in bytes
+  unsigned m_baseAlignLog2 = 0; // worst-case alignment
   CompType m_CompType;
   DXIL::SamplerFeedbackType m_SamplerFeedbackType;
   bool m_bGloballyCoherent;

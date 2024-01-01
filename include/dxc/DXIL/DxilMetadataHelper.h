@@ -115,6 +115,13 @@ public:
   static const char kDxilSourceMainFileNameMDName[];
   static const char kDxilSourceArgsMDName[];
 
+  // Resource binding data
+  static const char kDxilDxcBindingTableMDName[];
+  static const unsigned kDxilDxcBindingTableResourceName  = 0;
+  static const unsigned kDxilDxcBindingTableResourceClass = 1;
+  static const unsigned kDxilDxcBindingTableResourceIndex = 2;
+  static const unsigned kDxilDxcBindingTableResourceSpace = 3;
+
   // Old source info.
   static const char kDxilSourceContentsOldMDName[];
   static const char kDxilSourceDefinesOldMDName[];
@@ -219,6 +226,9 @@ public:
   static const unsigned kDxilFieldAnnotationCompTypeTag           = 7;
   static const unsigned kDxilFieldAnnotationPreciseTag            = 8;
   static const unsigned kDxilFieldAnnotationCBUsedTag             = 9;
+  static const unsigned kDxilFieldAnnotationResPropTag            = 10;
+  static const unsigned kDxilFieldAnnotationBitFieldsTag          = 11;
+  static const unsigned kDxilFieldAnnotationBitFieldWidthTag      = 12;
 
   // DXR Payload Annotations
   static const unsigned kDxilPayloadAnnotationStructTag           = 0;
@@ -233,12 +243,6 @@ public:
 
   // Control flow hint.
   static const char kDxilControlFlowHintMDName[];
-
-  // Resource attribute.
-  static const char kHLDxilResourceAttributeMDName[];
-  static const unsigned kHLDxilResourceAttributeNumFields = 2;
-  static const unsigned kHLDxilResourceAttributeClass = 0;
-  static const unsigned kHLDxilResourceAttributeMeta = 1;
 
   // Precise attribute.
   static const char kDxilPreciseAttributeMDName[];
@@ -272,6 +276,7 @@ public:
   static const unsigned kDxilMSStateTag         = 9;
   static const unsigned kDxilASStateTag         = 10;
   static const unsigned kDxilWaveSizeTag        = 11;
+  static const unsigned kDxilEntryRootSigTag    = 12;
 
   // GSState.
   static const unsigned kDxilGSStateNumFields               = 5;
@@ -403,9 +408,6 @@ public:
   llvm::MDTuple *EmitDxilSampler(const DxilSampler &S);
   void LoadDxilSampler(const llvm::MDOperand &MDO, DxilSampler &S);
   const llvm::MDOperand &GetResourceClass(llvm::MDNode *MD, DXIL::ResourceClass &RC);
-  void LoadDxilResourceBaseFromMDNode(llvm::MDNode *MD, DxilResourceBase &R);
-  void LoadDxilResourceFromMDNode(llvm::MDNode *MD, DxilResource &R);
-  void LoadDxilSamplerFromMDNode(llvm::MDNode *MD, DxilSampler &S);
 
   // Type system.
   void EmitDxilTypeSystem(DxilTypeSystem &TypeSystem, std::vector<llvm::GlobalVariable *> &LLVMUsed);

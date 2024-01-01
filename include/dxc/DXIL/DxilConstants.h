@@ -29,7 +29,7 @@ namespace DXIL {
   const unsigned kDxilMajor = 1;
   /* <py::lines('VALRULE-TEXT')>hctdb_instrhelp.get_dxil_version_minor()</py>*/
   // VALRULE-TEXT:BEGIN
-  const unsigned kDxilMinor = 6;
+  const unsigned kDxilMinor = 7;
   // VALRULE-TEXT:END
 
   inline unsigned MakeDxilVersion(unsigned DxilMajor, unsigned DxilMinor) {
@@ -336,9 +336,31 @@ namespace DXIL {
     NumEntries,
   };
 
+  /// Whether the resource kind is a texture. This does not include
+  /// FeedbackTextures.
   inline bool IsAnyTexture(DXIL::ResourceKind ResourceKind) {
     return DXIL::ResourceKind::Texture1D <= ResourceKind &&
            ResourceKind <= DXIL::ResourceKind::TextureCubeArray;
+  }
+
+  /// Whether the resource kind is an array of textures. This does not include
+  /// FeedbackTextures.
+  inline bool IsAnyArrayTexture(DXIL::ResourceKind ResourceKind) {
+    return DXIL::ResourceKind::Texture1DArray <= ResourceKind &&
+           ResourceKind <= DXIL::ResourceKind::TextureCubeArray;
+  }
+
+  /// Whether the resource kind is a Texture or FeedbackTexture with array
+  /// dimension.
+  inline bool IsArrayKind(DXIL::ResourceKind ResourceKind) {
+    return IsAnyArrayTexture(ResourceKind) ||
+           ResourceKind == DXIL::ResourceKind::FeedbackTexture2DArray;
+  }
+
+  /// Whether the resource kind is a TextureCube or TextureCubeArray.
+  inline bool IsAnyTextureCube(DXIL::ResourceKind ResourceKind) {
+    return DXIL::ResourceKind::TextureCube == ResourceKind || 
+           DXIL::ResourceKind::TextureCubeArray == ResourceKind;
   }
 
   inline bool IsStructuredBuffer(DXIL::ResourceKind ResourceKind) {
@@ -361,6 +383,7 @@ namespace DXIL {
     return ResourceKind == DXIL::ResourceKind::TBuffer;
   }
 
+  /// Whether the resource kind is a FeedbackTexture.
   inline bool IsFeedbackTexture(DXIL::ResourceKind ResourceKind) {
     return ResourceKind == DXIL::ResourceKind::FeedbackTexture2D ||
            ResourceKind == DXIL::ResourceKind::FeedbackTexture2DArray;
@@ -552,6 +575,7 @@ namespace DXIL {
     // Quad Wave Ops
     QuadOp = 123, // returns the result of a quad-level operation
     QuadReadLaneAt = 122, // reads from a lane in the quad
+    QuadVote = 222, // compares boolean accross a quad
   
     // Quaternary
     Bfi = 53, // Given a bit range from the LSB of a number, places that number of bits in another number at any offset
@@ -593,8 +617,7 @@ namespace DXIL {
     // Resources - gather
     TextureGather = 73, // gathers the four texels that would be used in a bi-linear filtering operation
     TextureGatherCmp = 74, // same as TextureGather, except this instrution performs comparison on texels, similar to SampleCmp
-    TextureGatherCmpImm = 223, // same as TextureGatherCmp, except offsets are limited to immediate values between -8 and 7
-    TextureGatherImm = 222, // same as TextureGather, except offsets are limited to immediate values between -8 and 7
+    TextureGatherRaw = 223, // Gather raw elements from 4 texels with no type conversions (SRV type is constrained)
   
     // Resources - sample
     RenderTargetGetSampleCount = 77, // gets the number of samples for a render target
@@ -602,6 +625,7 @@ namespace DXIL {
     Sample = 60, // samples a texture
     SampleBias = 61, // samples a texture after applying the input bias to the mipmap level
     SampleCmp = 64, // samples a texture and compares a single component against the specified comparison value
+    SampleCmpLevel = 224, // samples a texture and compares a single component against the specified comparison value
     SampleCmpLevelZero = 65, // samples a texture and compares a single component against the specified comparison value
     SampleGrad = 63, // samples a texture using a gradient to influence the way the sample location is calculated
     SampleLevel = 62, // samples a texture using a mipmap-level offset
@@ -620,6 +644,7 @@ namespace DXIL {
     RawBufferStore = 140, // writes to a RWByteAddressBuffer or RWStructuredBuffer
     TextureLoad = 66, // reads texel data without any filtering or sampling
     TextureStore = 67, // reads texel data without any filtering or sampling
+    TextureStoreSample = 225, // stores texel data at specified sample index
   
     // Sampler Feedback
     WriteSamplerFeedback = 174, // updates a feedback texture for a sampling operation
@@ -719,8 +744,9 @@ namespace DXIL {
     NumOpCodes_Dxil_1_4 = 165,
     NumOpCodes_Dxil_1_5 = 216,
     NumOpCodes_Dxil_1_6 = 222,
+    NumOpCodes_Dxil_1_7 = 226,
   
-    NumOpCodes = 224 // exclusive last value of enumeration
+    NumOpCodes = 226 // exclusive last value of enumeration
   };
   // OPCODE-ENUM:END
 
@@ -861,6 +887,7 @@ namespace DXIL {
     // Quad Wave Ops
     QuadOp,
     QuadReadLaneAt,
+    QuadVote,
   
     // Quaternary
     Quaternary,
@@ -902,8 +929,7 @@ namespace DXIL {
     // Resources - gather
     TextureGather,
     TextureGatherCmp,
-    TextureGatherCmpImm,
-    TextureGatherImm,
+    TextureGatherRaw,
   
     // Resources - sample
     RenderTargetGetSampleCount,
@@ -911,6 +937,7 @@ namespace DXIL {
     Sample,
     SampleBias,
     SampleCmp,
+    SampleCmpLevel,
     SampleCmpLevelZero,
     SampleGrad,
     SampleLevel,
@@ -929,6 +956,7 @@ namespace DXIL {
     RawBufferStore,
     TextureLoad,
     TextureStore,
+    TextureStoreSample,
   
     // Sampler Feedback
     WriteSamplerFeedback,
@@ -986,8 +1014,9 @@ namespace DXIL {
     NumOpClasses_Dxil_1_4 = 120,
     NumOpClasses_Dxil_1_5 = 143,
     NumOpClasses_Dxil_1_6 = 149,
+    NumOpClasses_Dxil_1_7 = 153,
   
-    NumOpClasses = 151 // exclusive last value of enumeration
+    NumOpClasses = 153 // exclusive last value of enumeration
   };
   // OPCODECLASS-ENUM:END
 
@@ -1122,6 +1151,9 @@ namespace DXIL {
     const unsigned kCreateHandleFromHeapHeapIndexOpIdx = 1;
     const unsigned kCreateHandleFromHeapSamplerHeapOpIdx = 2;
     const unsigned kCreateHandleFromHeapNonUniformIndexOpIdx = 3;
+
+    // CreateHandleFromBinding
+    const unsigned kCreateHandleFromBindingResIndexOpIdx = 2;
 
     // TraceRay
     const unsigned kTraceRayRayDescOpIdx = 7;
@@ -1325,6 +1357,15 @@ namespace DXIL {
   };
   // SIGNEDOPKIND-ENUM:END
 
+  /* <py::lines('QUADVOTEOPKIND-ENUM')>hctdb_instrhelp.get_enum_decl("QuadVoteOpKind")</py>*/
+  // QUADVOTEOPKIND-ENUM:BEGIN
+  // Kind of cross-quad vote operation
+  enum class QuadVoteOpKind : unsigned {
+    All = 1, // true if all conditions are true in this quad
+    Any = 0, // true if any condition is true in this quad
+  };
+  // QUADVOTEOPKIND-ENUM:END
+
   // Kind of control flow hint
   enum class ControlFlowHint : unsigned {
     Undefined = 0,
@@ -1434,7 +1475,11 @@ namespace DXIL {
 
   const uint64_t ShaderFeatureInfo_AtomicInt64OnHeapResource      = 0x10000000;
 
-  const unsigned ShaderFeatureInfoCount = 29;
+  // SM 6.7+
+  const uint64_t ShaderFeatureInfo_AdvancedTextureOps             = 0x20000000;
+  const uint64_t ShaderFeatureInfo_WriteableMSAATextures          = 0x40000000;
+
+  const unsigned ShaderFeatureInfoCount = 31;
 
   // DxilSubobjectType must match D3D12_STATE_SUBOBJECT_TYPE, with
   // certain values reserved, since they cannot be used from Dxil.
@@ -1526,6 +1571,10 @@ namespace DXIL {
   extern const char *kDxBreakCondName;
   extern const char *kDxBreakMDName;
   extern const char *kDxIsHelperGlobalName;
+
+  extern const char *kHostLayoutTypePrefix;
+
+  extern const char *kWaveOpsIncludeHelperLanesString;
 
 } // namespace DXIL
 
