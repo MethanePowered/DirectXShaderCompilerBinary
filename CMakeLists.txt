@@ -40,7 +40,7 @@ elseif(APPLE)
 else() # Linux
 
     set(BINARIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/binaries/Linux")
-    set(BINARIES_MD5 267c9e7efece17b931826fb5cc287e3a)
+    set(BINARIES_MD5 dc8cac378a4d050d2649cfb41f35b993)
 
 endif()
 
