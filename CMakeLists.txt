@@ -8,7 +8,7 @@ set(TARGET DirectXCompiler)
 include(ExternalProject)
 
 if(WIN32)
-    add_library(${TARGET} STATIC src/d3dcomp.cpp)
+    add_library(${TARGET} STATIC src/d3dcomp.cpp src/d3dcomp.def)
 else()
     add_library(${TARGET} STATIC src/dummy.cpp)
 endif()

@@ -121,6 +121,9 @@ def fconstexpr_depth_EQ : Joined<["-"], "fconstexpr-depth=">, Group<f_Group>;
 def fconstexpr_steps_EQ : Joined<["-"], "fconstexpr-steps=">, Group<f_Group>;
 def fconstexpr_backtrace_limit_EQ : Joined<["-"], "fconstexpr-backtrace-limit=">,
                                     Group<f_Group>;
+def fdiagnostics_format_EQ : Joined<["-"], "fdiagnostics-format=">, Group<hlslcomp_Group>,
+    Flags<[CoreOption]>,
+    HelpText<"Select diagnostic message format. Supported values: clang, msvc, mdvc-fallback, vi">;
 def fdiagnostics_show_option : Flag<["-"], "fdiagnostics-show-option">, Group<hlslcomp_Group>,
     Flags<[CoreOption]>, HelpText<"Print option name with mappable diagnostics">;
 def fno_diagnostics_show_option : Flag<["-"], "fno-diagnostics-show-option">, Group<hlslcomp_Group>,
@@ -186,10 +189,25 @@ def ftime_trace : Flag<["-"], "ftime-trace">,
 def ftime_trace_EQ : Joined<["-"], "ftime-trace=">,
   Group<hlslcomp_Group>, Flags<[CoreOption]>,
   HelpText<"Print hierchial time tracing to file">;
+def ftime_trace_granularity_EQ : Joined<["-"], "ftime-trace-granularity=">,
+  Group<hlslcomp_Group>, Flags<[CoreOption]>,
+  HelpText<"Minimum time granularity (in microseconds) traced by time profiler">;
 
 def verify : Joined<["-"], "verify">,
   Group<hlslcomp_Group>, Flags<[CoreOption, DriverOption]>,
   HelpText<"Verify diagnostic output using comment directives">;
+
+def verbose : Flag<["-"], "verbose">,
+              Group<hlslcomp_Group>,
+              Flags<[DriverOption]>,
+              HelpText<"Allow emission of verbose compiler information">;
+
+// Short alias '-v' for the verbose option
+def v : Flag<["-"], "v">,
+        Alias<verbose>,
+        Group<hlslcomp_Group>,
+        Flags<[DriverOption]>,
+        HelpText<"Alias for -verbose">;
 
 /*
 def fno_caret_diagnostics : Flag<["-"], "fno-caret-diagnostics">, Group<hlslcomp_Group>,
@@ -272,7 +290,7 @@ def flegacy_macro_expansion : Flag<["-", "/"], "flegacy-macro-expansion">, Group
     HelpText<"Expand the operands before performing token-pasting operation (fxc behavior)">;
 def flegacy_resource_reservation : Flag<["-", "/"], "flegacy-resource-reservation">, Group<hlslcomp_Group>, Flags<[CoreOption, DriverOption]>,
     HelpText<"Reserve unused explicit register assignments for compatibility with shader model 5.0 and below">;
-def no_legacy_cbuf_layout : Flag<["-", "/"], "no-legacy-cbuf-layout">, Group<hlslcomp_Group>, Flags<[CoreOption]>,
+def no_legacy_cbuf_layout : Flag<["-", "/"], "no-legacy-cbuf-layout">, Group<hlslcomp_Group>, Flags<[CoreOption, HelpHidden]>,
   HelpText<"Do not use legacy cbuffer load">;
 def not_use_legacy_cbuf_load_ : Flag<["-", "/"], "not_use_legacy_cbuf_load">, Group<hlslcomp_Group>, Flags<[CoreOption, HelpHidden]>,
   HelpText<"Do not use legacy cbuffer load">;
@@ -285,7 +303,7 @@ def pack_optimized : Flag<["-", "/"], "pack-optimized">, Group<hlslcomp_Group>, 
 def pack_optimized_ : Flag<["-", "/"], "pack_optimized">, Group<hlslcomp_Group>, Flags<[CoreOption, HelpHidden]>,
   HelpText<"Optimize signature packing assuming identical signature provided for each connecting stage">;
 def hlsl_version : Separate<["-", "/"], "HV">, Group<hlslcomp_Group>, Flags<[CoreOption, RewriteOption]>,
-  HelpText<"HLSL version (2016, 2017, 2018, 2021). Default is 2018">;
+  HelpText<"HLSL version (2016, 2017, 2018, 2021). Default is 2021">;
 def no_warnings : Flag<["-", "/"], "no-warnings">, Group<hlslcomp_Group>, Flags<[CoreOption, RewriteOption]>,
   HelpText<"Suppress warnings">;
 def rootsig_define : Separate<["-", "/"], "rootsig-define">, Group<hlslcomp_Group>, Flags<[CoreOption]>,
@@ -307,10 +325,14 @@ def encoding : Separate<["-", "/"], "encoding">, Group<hlslcomp_Group>, Flags<[C
   HelpText<"Set default encoding for source inputs and text outputs (utf8|utf16(win)|utf32(*nix)|wide) default=utf8">;
 def validator_version : Separate<["-", "/"], "validator-version">, Group<hlslcomp_Group>, Flags<[CoreOption, HelpHidden]>,
   HelpText<"Override validator version for module.  Format: <major.minor> ; Default: DXIL.dll version or current internal version.">;
+def print_before_all : Flag<["-", "/"], "print-before-all">, Group<hlslcomp_Group>, Flags<[CoreOption, HelpHidden]>,
+  HelpText<"Print LLVM IR before each pass.">;
+def print_before : Separate<["-", "/"], "print-before">, Group<hlslcomp_Group>, Flags<[CoreOption, HelpHidden]>,
+  HelpText<"Print LLVM IR before a specific pass. May be specificied multiple times.">;
 def print_after_all : Flag<["-", "/"], "print-after-all">, Group<hlslcomp_Group>, Flags<[CoreOption, HelpHidden]>,
   HelpText<"Print LLVM IR after each pass.">;
 def print_after : Separate<["-", "/"], "print-after">, Group<hlslcomp_Group>, Flags<[CoreOption, HelpHidden]>,
-  HelpText<"Print LLVM IR after a specific pass.">;
+  HelpText<"Print LLVM IR after a specific pass. May be specificied multiple times.">;
 def ignore_opt_semdefs : Flag<["-", "/"], "ignore-opt-semdefs">, Group<hlslcomp_Group>, Flags<[CoreOption, HelpHidden]>,
   HelpText<"Ignore optional semantic defines which are not required to ensure program correctness.">;
 def ignore_semdef : Separate<["-", "/"], "ignore-semdef">, Group<hlslcomp_Group>, Flags<[CoreOption, HelpHidden]>,
@@ -334,6 +356,11 @@ def disable_exception_handling : Flag<["-", "/"], "disable-exception-handling">,
 def skip_serialization : Flag<["-", "/"], "skip-serialization">, Group<hlslcore_Group>, Flags<[CoreOption, HelpHidden]>,
   HelpText<"Return a module interface instead of serialized output">;
 
+def metal : Flag<["-"], "metal">,
+            Group<spirv_Group>,
+            Flags<[CoreOption, DriverOption]>,
+            HelpText<"Generate Metal code">;
+
 // SPIRV Change Starts
 def spirv : Flag<["-"], "spirv">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
   HelpText<"Generate SPIR-V code">;
@@ -353,11 +380,13 @@ def fvk_bind_register : MultiArg<["-"], "fvk-bind-register", 4>, MetaVarName<"<t
   HelpText<"Specify Vulkan descriptor set and binding for a specific register">;
 def vkbr : MultiArg<["-"], "vkbr", 4>, Flags<[CoreOption, DriverOption]>, Alias<fvk_bind_register>;
 def fvk_invert_y: Flag<["-"], "fvk-invert-y">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
-  HelpText<"Negate SV_Position.y before writing to stage output in VS/DS/GS to accommodate Vulkan's coordinate system">;
+  HelpText<"Negate SV_Position.y before writing to stage output in VS/DS/GS/MS/Lib to accommodate Vulkan's coordinate system">;
 def fvk_use_dx_position_w: Flag<["-"], "fvk-use-dx-position-w">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
   HelpText<"Reciprocate SV_Position.w after reading from stage input in PS to accommodate the difference between Vulkan and DirectX">;
 def fvk_support_nonzero_base_instance: Flag<["-"], "fvk-support-nonzero-base-instance">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
   HelpText<"Follow Vulkan spec to use gl_BaseInstance as the first vertex instance, which makes SV_InstanceID = gl_InstanceIndex - gl_BaseInstance (without this option, SV_InstanceID = gl_InstanceIndex)">;
+def fvk_support_nonzero_base_vertex: Flag<["-"], "fvk-support-nonzero-base-vertex">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
+  HelpText<"Follow Vulkan spec to use gl_BaseVertex as the first vertex, which makes SV_VertexID = gl_VertexIndex - gl_BaseVertex (without this option, SV_VertexID = gl_VertexIndex)">;
 def fvk_use_gl_layout: Flag<["-"], "fvk-use-gl-layout">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
   HelpText<"Use strict OpenGL std140/std430 memory layout for Vulkan resources">;
 def fvk_use_dx_layout: Flag<["-"], "fvk-use-dx-layout">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
@@ -382,6 +411,16 @@ def fspv_fix_func_call_arguments: Flag<["-"], "fspv-fix-func-call-arguments">, G
   HelpText<"Fix function call arguments which are not memory objects">;
 def fspv_entrypoint_name_EQ : Joined<["-"], "fspv-entrypoint-name=">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
   HelpText<"Specify the SPIR-V entry point name. Defaults to the HLSL entry point name.">;
+def fspv_enable_maximal_reconvergence: Flag<["-"], "fspv-enable-maximal-reconvergence">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
+  HelpText<"Enables the MaximallyReconvergesKHR execution mode for this module.">;
+def fspv_use_vulkan_memory_model: Flag<["-"], "fspv-use-vulkan-memory-model">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
+  HelpText<"Generates SPIR-V modules that use the Vulkan memory model instead of GLSL450.">;
+def fspv_use_unknown_image_format
+    : Flag<["-"], "fspv-use-unknown-image-format">,
+      Group<spirv_Group>,
+      Flags<[CoreOption, DriverOption]>,
+      HelpText<"For storage images and texel buffers, sets the default format to 'Unknown' when not specified via the `vk::image_format` attribute. If this option is not used, the format is inferred from the resource's data type.">;
+
 def fvk_auto_shift_bindings: Flag<["-"], "fvk-auto-shift-bindings">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
   HelpText<"Apply fvk-*-shift to resources without an explicit register assignment.">;
 def Wno_vk_ignored_features : Joined<["-"], "Wno-vk-ignored-features">, Group<spirv_Group>, Flags<[CoreOption, DriverOption, HelpHidden]>,
@@ -396,8 +435,14 @@ def fspv_preserve_bindings : Flag<["-"], "fspv-preserve-bindings">, Group<spirv_
   HelpText<"Preserves all bindings declared within the module, even when those bindings are unused">;
 def fspv_preserve_interface : Flag<["-"], "fspv-preserve-interface">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
   HelpText<"Preserves all interface variables in the entry point, even when those variables are unused">;
-def fvk_allow_rwstructuredbuffer_arrays: Flag<["-"], "fvk-allow-rwstructuredbuffer-arrays">, Group<spirv_Group>, Flags<[CoreOption, DriverOption, HelpHidden]>,
-  HelpText<"Allow arrays of RWStructuredBuffers, AppendStructuredBuffers, and ConsumeStructuredBuffers. This is in development, and the option will be removed when the feature is complete.">;
+def fspv_max_id : MultiArg<["-"], "fspv-max-id", 1>, MetaVarName<"<shift> <space>">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
+  HelpText<"Set the maximum value for an id in the SPIR-V binary. Default is 0x3FFFFF, which is the largest value all drivers must support.">;
+def fvk_bind_resource_heap : MultiArg<["-"], "fvk-bind-resource-heap", 2>, MetaVarName<"<binding> <set>">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
+  HelpText<"Specify Vulkan binding number and set number for the resource heap.">;
+def fvk_bind_sampler_heap : MultiArg<["-"], "fvk-bind-sampler-heap", 2>, MetaVarName<"<binding> <set>">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
+  HelpText<"Specify Vulkan binding number and set number for the sampler heap.">;
+def fvk_bind_counter_heap : MultiArg<["-"], "fvk-bind-counter-heap", 2>, MetaVarName<"<binding> <set>">, Group<spirv_Group>, Flags<[CoreOption, DriverOption]>,
+  HelpText<"Specify Vulkan binding number and set number for the counter heap.">;
 // SPIRV Change Ends
 
 //////////////////////////////////////////////////////////////////////////////
@@ -406,7 +451,7 @@ def fvk_allow_rwstructuredbuffer_arrays: Flag<["-"], "fvk-allow-rwstructuredbuff
 def target_profile : JoinedOrSeparate<["-", "/"], "T">, Flags<[CoreOption]>, Group<hlslcomp_Group>, MetaVarName<"<profile>">,
   /* <py::lines('VALRULE-TEXT')>hctdb_instrhelp.get_target_profiles()</py>*/
   // VALRULE-TEXT:BEGIN
-  HelpText<"Set target profile. \n\t<profile>: ps_6_0, ps_6_1, ps_6_2, ps_6_3, ps_6_4, ps_6_5, ps_6_6, ps_6_7, \n\t\t vs_6_0, vs_6_1, vs_6_2, vs_6_3, vs_6_4, vs_6_5, vs_6_6, vs_6_7, \n\t\t gs_6_0, gs_6_1, gs_6_2, gs_6_3, gs_6_4, gs_6_5, gs_6_6, gs_6_7, \n\t\t hs_6_0, hs_6_1, hs_6_2, hs_6_3, hs_6_4, hs_6_5, hs_6_6, hs_6_7, \n\t\t ds_6_0, ds_6_1, ds_6_2, ds_6_3, ds_6_4, ds_6_5, ds_6_6, ds_6_7, \n\t\t cs_6_0, cs_6_1, cs_6_2, cs_6_3, cs_6_4, cs_6_5, cs_6_6, cs_6_7, \n\t\t lib_6_1, lib_6_2, lib_6_3, lib_6_4, lib_6_5, lib_6_6, lib_6_7, \n\t\t ms_6_5, ms_6_6, ms_6_7, \n\t\t as_6_5, as_6_6, as_6_7, \n\t\t ">;
+  HelpText<"Set target profile. \n\t<profile>: ps_6_0, ps_6_1, ps_6_2, ps_6_3, ps_6_4, ps_6_5, ps_6_6, ps_6_7, ps_6_8, ps_6_9, \n\t\t vs_6_0, vs_6_1, vs_6_2, vs_6_3, vs_6_4, vs_6_5, vs_6_6, vs_6_7, vs_6_8, vs_6_9, \n\t\t gs_6_0, gs_6_1, gs_6_2, gs_6_3, gs_6_4, gs_6_5, gs_6_6, gs_6_7, gs_6_8, gs_6_9, \n\t\t hs_6_0, hs_6_1, hs_6_2, hs_6_3, hs_6_4, hs_6_5, hs_6_6, hs_6_7, hs_6_8, hs_6_9, \n\t\t ds_6_0, ds_6_1, ds_6_2, ds_6_3, ds_6_4, ds_6_5, ds_6_6, ds_6_7, ds_6_8, ds_6_9, \n\t\t cs_6_0, cs_6_1, cs_6_2, cs_6_3, cs_6_4, cs_6_5, cs_6_6, cs_6_7, cs_6_8, cs_6_9, \n\t\t lib_6_1, lib_6_2, lib_6_3, lib_6_4, lib_6_5, lib_6_6, lib_6_7, lib_6_8, lib_6_9, \n\t\t ms_6_5, ms_6_6, ms_6_7, ms_6_8, ms_6_9, \n\t\t as_6_5, as_6_6, as_6_7, as_6_8, as_6_9, \n\t\t ">;
   // VALRULE-TEXT:END
 def entrypoint :  JoinedOrSeparate<["-", "/"], "E">, Flags<[CoreOption, RewriteOption]>, Group<hlslcomp_Group>,
   HelpText<"Entry point name">;
@@ -484,8 +529,8 @@ def Qembed_debug : Flag<["-", "/"], "Qembed_debug">, Flags<[CoreOption]>, Group<
   HelpText<"Embed PDB in shader container (must be used with /Zi)">;
 def Qstrip_priv : Flag<["-", "/"], "Qstrip_priv">, Flags<[CoreOption, DriverOption]>, Group<hlslutil_Group>,
   HelpText<"Strip private data from shader bytecode  (must be used with /Fo <file>)">;
-def Qsource_in_debug_module : Flag<["-", "/"], "Qsource_in_debug_module">, Flags<[CoreOption, HelpHidden]>, Group<hlslutil_Group>,
-  HelpText<"Generate old PDB format.">;
+def Qsource_in_debug_module : Flag<["-", "/"], "Qsource_in_debug_module">, Flags<[CoreOption]>, Group<hlslutil_Group>,
+  HelpText<"Embed source code in PDB">;
 def Qpdb_in_private : Flag<["-", "/"], "Qpdb_in_private">, Flags<[CoreOption, HelpHidden]>, Group<hlslutil_Group>,
   HelpText<"Store PDB in private user data.">;
 
