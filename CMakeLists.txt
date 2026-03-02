@@ -8,7 +8,13 @@ set(TARGET DirectXCompiler)
 include(ExternalProject)
 
 if(WIN32)
-    add_library(${TARGET} STATIC src/d3dcomp.cpp src/d3dcomp.def)
+    add_library(${TARGET} STATIC src/d3dcomp.cpp)
+    if(MSVC)
+        target_compile_options(${TARGET}
+            PRIVATE
+                /wd4297 # 'D3DCompileFromFile': function assumed not to throw an exception but does
+        )
+    endif()
 else()
     add_library(${TARGET} STATIC src/dummy.cpp)
 endif()
