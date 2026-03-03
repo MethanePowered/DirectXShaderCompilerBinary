@@ -21,7 +21,10 @@ endif()
 
 if(WIN32)
 
-    if(${CMAKE_SIZEOF_VOID_P} STREQUAL "4")
+    if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ARM64")
+        set(WIN_ARCH "Arm64")
+        set(BINARIES_MD5 9c72e88e995990ebd6454b1a0d61c7bf)
+    elseif(${CMAKE_SIZEOF_VOID_P} STREQUAL "4")
         set(WIN_ARCH "x86")
         set(BINARIES_MD5 504f5d56cb5bd69d98320670f9dddfe5)
     elseif(${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
