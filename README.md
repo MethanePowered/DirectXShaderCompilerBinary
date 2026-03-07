@@ -1,5 +1,5 @@
 # DirectX Shader Compiler Binary
 
-Pre-built binaries of the [DirectX Shader Compiler v1.7.2308](https://github.com/microsoft/DirectXShaderCompiler/releases/tag/v1.7.2308) (August 2023) for Windows (x64 and x86), Linux (x64) and MacOS (Arm64 + x64).
+Pre-built binaries of the [DirectX Shader Compiler v1.9.2602](https://github.com/microsoft/DirectXShaderCompiler/releases/tag/v1.9.2602) (February 2026) for Windows (x64, x86 and Arm64), Linux (x64) and MacOS (Arm64).
 
-CMake target `DirectXCompiler` also includes implementation of "D3DCompiler to DXC" interoperability.
+CMake target `DirectXCompiler` includes implementation of "D3DCompiler to DXC" interoperability.

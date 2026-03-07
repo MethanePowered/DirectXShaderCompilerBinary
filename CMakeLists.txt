@@ -9,18 +9,27 @@ include(ExternalProject)
 
 if(WIN32)
     add_library(${TARGET} STATIC src/d3dcomp.cpp)
+    if(MSVC)
+        target_compile_options(${TARGET}
+            PRIVATE
+                /wd4297 # 'D3DCompileFromFile': function assumed not to throw an exception but does
+        )
+    endif()
 else()
     add_library(${TARGET} STATIC src/dummy.cpp)
 endif()
 
 if(WIN32)
 
-    if(${CMAKE_SIZEOF_VOID_P} STREQUAL "4")
+    if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ARM64")
+        set(WIN_ARCH "Arm64")
+        set(BINARIES_MD5 9c72e88e995990ebd6454b1a0d61c7bf)
+    elseif(${CMAKE_SIZEOF_VOID_P} STREQUAL "4")
         set(WIN_ARCH "x86")
-        set(BINARIES_MD5 376c4817d8349c923c80082449f65a7c)
+        set(BINARIES_MD5 504f5d56cb5bd69d98320670f9dddfe5)
     elseif(${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
         set(WIN_ARCH "x64")
-        set(BINARIES_MD5 71d2761c189e6ed699a944936e376a68)
+        set(BINARIES_MD5 2669aaccaeab73465db3e923a3def521)
     else()
         message(FATAL_ERROR "Unknown architecture")
     endif()
@@ -35,12 +44,12 @@ if(WIN32)
 elseif(APPLE)
 
     set(BINARIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/binaries/MacOS")
-    set(BINARIES_MD5 f1f1e00c6605066e86e45ecc77904d53)
+    set(BINARIES_MD5 ad1b4a64a6374de614e47c6300b0e665)
 
 else() # Linux
 
     set(BINARIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/binaries/Linux")
-    set(BINARIES_MD5 dc8cac378a4d050d2649cfb41f35b993)
+    set(BINARIES_MD5 aa77564f021bd4a61e41c58188aff27b)
 
 endif()
 
